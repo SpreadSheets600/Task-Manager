@@ -1,0 +1,436 @@
+{% extends "base.html" %} {% block title %}TaskFlow - {% if task %}Edit Task{%
+else %}New Task{% endif %}{% endblock %} {% block extra_head %}
+<link
+	rel="stylesheet"
+	href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+{% endblock %} {% block content %}
+<div class="grid grid-cols-1 gap-6 max-w-3xl mx-auto">
+	<!-- Header Section -->
+	<div
+		class="card w-full bg-gradient-to-r from-primary to-accent text-primary-content shadow-xl">
+		<div class="card-body">
+			<div class="flex justify-between items-center">
+				<h2 class="card-title text-2xl">
+					{% if task %}Edit Task{% else %}Create New Task{% endif %}
+				</h2>
+				<div class="flex items-center">
+					<span class="text-xs opacity-80"
+						>{{ today.strftime('%A, %B %d, %Y') }}</span
+					>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<!-- Task Form -->
+	<div class="card w-full bg-base-100 shadow-xl">
+		<div class="card-body">
+			<form method="POST" class="space-y-6">
+				{{ form.hidden_tag() }}
+
+				<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+					<!-- Left Column -->
+					<div class="space-y-4">
+						<!-- Title Field -->
+						<div class="form-control">
+							<label class="label">
+								<span class="label-text">Task Title</span>
+								<span class="label-text-alt text-error">Required</span>
+							</label>
+							{{ form.title(class="input input-bordered w-full" + (" is-invalid"
+							if form.title.errors else ""), placeholder="Enter task title...")
+							}} {% if form.title.errors %} {% for error in form.title.errors %}
+							<div class="text-error text-xs mt-1">{{ error }}</div>
+							{% endfor %} {% endif %}
+						</div>
+
+						<!-- Description Field -->
+						<div class="form-control">
+							<label class="label">
+								<span class="label-text">Description</span>
+								<span class="label-text-alt">Optional</span>
+							</label>
+							{{ form.description(class="textarea textarea-bordered h-24",
+							placeholder="Enter task details...") }} {% if
+							form.description.errors %} {% for error in form.description.errors
+							%}
+							<div class="text-error text-xs mt-1">{{ error }}</div>
+							{% endfor %} {% endif %}
+						</div>
+
+						<!-- Due Date Field -->
+						<div class="form-control">
+							<label class="label">
+								<span class="label-text">Due Date & Time</span>
+								<span class="label-text-alt">Optional</span>
+							</label>
+							{{ form.due_date(class="input input-bordered w-full",
+							id="due_date_picker") }} {% if form.due_date.errors %} {% for
+							error in form.due_date.errors %}
+							<div class="text-error text-xs mt-1">{{ error }}</div>
+							{% endfor %} {% endif %}
+						</div>
+
+						<!-- Priority Field -->
+						<div class="form-control">
+							<label class="label">
+								<span class="label-text">Priority</span>
+							</label>
+							<div class="flex gap-2">
+								{% for subfield in form.priority %}
+								<div
+									class="priority-option bg-base-200 rounded-lg p-2 flex flex-col items-center gap-1 cursor-pointer flex-1 hover:bg-base-300 transition-colors
+                                            {{ 'ring-2 ring-success' if subfield.data == 'low' else
+                                               'ring-2 ring-warning' if subfield.data == 'medium' else
+                                               'ring-2 ring-error' if subfield.data == 'high' else
+                                               'ring-2 ring-error' }}"
+									data-priority="{{ subfield.data }}">
+									<div class="hidden">{{ subfield }}</div>
+									<div
+										class="priority-icon w-6 h-6 flex items-center justify-center">
+										{% if subfield.data == 'low' %}
+										<svg
+											xmlns="http://www.w3.org/2000/svg"
+											class="h-6 w-6 text-success"
+											fill="none"
+											viewBox="0 0 24 24"
+											stroke="currentColor">
+											<path
+												stroke-linecap="round"
+												stroke-linejoin="round"
+												stroke-width="2"
+												d="M5 15l7-7 7 7" />
+										</svg>
+										{% elif subfield.data == 'medium' %}
+										<svg
+											xmlns="http://www.w3.org/2000/svg"
+											class="h-6 w-6 text-warning"
+											fill="none"
+											viewBox="0 0 24 24"
+											stroke="currentColor">
+											<path
+												stroke-linecap="round"
+												stroke-linejoin="round"
+												stroke-width="2"
+												d="M20 12H4" />
+										</svg>
+										{% elif subfield.data == 'high' %}
+										<svg
+											xmlns="http://www.w3.org/2000/svg"
+											class="h-6 w-6 text-error"
+											fill="none"
+											viewBox="0 0 24 24"
+											stroke="currentColor">
+											<path
+												stroke-linecap="round"
+												stroke-linejoin="round"
+												stroke-width="2"
+												d="M19 9l-7 7-7-7" />
+										</svg>
+										{% else %}
+										<svg
+											xmlns="http://www.w3.org/2000/svg"
+											class="h-6 w-6 text-error"
+											fill="none"
+											viewBox="0 0 24 24"
+											stroke="currentColor">
+											<path
+												stroke-linecap="round"
+												stroke-linejoin="round"
+												stroke-width="2"
+												d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+										</svg>
+										{% endif %}
+									</div>
+									<div
+										class="priority-label text-xs font-medium mt-1
+                                                {{ 'text-success' if subfield.data == 'low' else
+                                                   'text-warning' if subfield.data == 'medium' else
+                                                   'text-error' }}">
+										{{ subfield.label.text|title }}
+									</div>
+								</div>
+								{% endfor %}
+							</div>
+						</div>
+
+						<!-- Status Field -->
+						<div class="form-control">
+							<label class="label">
+								<span class="label-text">Status</span>
+							</label>
+							{{ form.status(class="select select-bordered w-full") }}
+						</div>
+					</div>
+
+					<!-- Right Column -->
+					<div class="space-y-4">
+						<!-- Category Field -->
+						<div class="form-control">
+							<label class="label">
+								<span class="label-text">Category</span>
+								<a
+									href="{{ url_for('categories') }}"
+									class="label-text-alt link link-primary"
+									>Manage Categories</a
+								>
+							</label>
+							{{ form.category_id(class="select select-bordered w-full") }}
+						</div>
+
+						<!-- Tags Field -->
+						<div class="form-control">
+							<label class="label">
+								<span class="label-text">Tags</span>
+								<span class="label-text-alt">Comma separated</span>
+							</label>
+							{{ form.tags(class="input input-bordered w-full",
+							placeholder="work, personal, meeting...") }}
+							<label class="label">
+								<span class="label-text-alt text-base-content"
+									>Add multiple tags separated by commas</span
+								>
+							</label>
+						</div>
+
+						<!-- Recurring Task Options -->
+						<div class="form-control">
+							<label class="label cursor-pointer justify-start">
+								{{ form.is_recurring(class="checkbox checkbox-primary mr-2") }}
+								<span class="label-text">Recurring Task</span>
+							</label>
+						</div>
+
+						<div
+							id="recurring-options"
+							class="p-3 bg-base-200 rounded-lg space-y-3 {% if not task or not task.is_recurring %}hidden{% endif %}">
+							<!-- Recurrence Type -->
+							<div class="form-control">
+								<label class="label">
+									<span class="label-text">Repeat Every</span>
+								</label>
+								<div class="flex gap-2">
+									{{ form.recurrence_interval(class="input input-bordered w-16",
+									min="1", value="1") }} {{ form.recurrence_type(class="select
+									select-bordered flex-1") }}
+								</div>
+							</div>
+
+							<div class="alert alert-info bg-opacity-20 text-xs">
+								<svg
+									xmlns="http://www.w3.org/2000/svg"
+									class="stroke-current flex-shrink-0 h-4 w-4"
+									fill="none"
+									viewBox="0 0 24 24">
+									<path
+										stroke-linecap="round"
+										stroke-linejoin="round"
+										stroke-width="2"
+										d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+								</svg>
+								<span
+									>New instances of this task will be created automatically
+									based on your settings.</span
+								>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<div class="divider"></div>
+
+				<!-- Form Actions -->
+				<div class="flex justify-between">
+					<a href="{{ url_for('index') }}" class="btn btn-ghost">Cancel</a>
+					<div class="flex gap-2">
+						{% if task %}
+						<button
+							type="button"
+							class="btn btn-error btn-outline"
+							onclick="deleteTaskConfirm({{ task.id }})">
+							Delete
+						</button>
+						{% endif %}
+						<button type="submit" class="btn btn-primary">
+							{% if task %}Save Changes{% else %}Create Task{% endif %}
+						</button>
+					</div>
+				</div>
+			</form>
+		</div>
+	</div>
+
+	<!-- Quick Templates -->
+	<div class="card w-full bg-base-100 shadow-xl">
+		<div class="card-body">
+			<h3 class="card-title text-lg">Quick Templates</h3>
+			<div class="divider my-1"></div>
+			<div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+				<button
+					class="btn btn-outline btn-sm"
+					onclick="applyTemplate('meeting')">
+					Meeting
+				</button>
+				<button
+					class="btn btn-outline btn-sm"
+					onclick="applyTemplate('deadline')">
+					Deadline
+				</button>
+				<button
+					class="btn btn-outline btn-sm"
+					onclick="applyTemplate('reminder')">
+					Reminder
+				</button>
+			</div>
+		</div>
+	</div>
+
+	<!-- Delete Confirmation Modal -->
+	{% if task %}
+	<dialog id="delete_confirm_modal" class="modal">
+		<div class="modal-box">
+			<h3 class="font-bold text-lg">Delete Task</h3>
+			<p class="py-4">
+				Are you sure you want to delete this task? This action cannot be undone.
+			</p>
+			<div class="modal-action">
+				<form method="dialog">
+					<button class="btn">Cancel</button>
+				</form>
+				<button class="btn btn-error" onclick="deleteTask({{ task.id }})">
+					Delete
+				</button>
+			</div>
+		</div>
+	</dialog>
+	{% endif %}
+</div>
+{% endblock %} {% block scripts %}
+<script>
+	document.addEventListener('DOMContentLoaded', function() {
+	    // Initialize date picker
+	    flatpickr("#due_date_picker", {
+	        enableTime: true,
+	        dateFormat: "Y-m-d H:i",
+	        altInput: true,
+	        altFormat: "F j, Y at h:i K",
+	        minDate: "today",
+	        defaultHour: 9,
+	        time_24hr: false,
+	        {% if request.args.get('date') %}
+	        defaultDate: "{{ request.args.get('date') }} 09:00",
+	        {% endif %}
+	    });
+
+	    // Priority selection
+	    document.querySelectorAll('.priority-option').forEach(option => {
+	        option.addEventListener('click', function() {
+	            const radio = this.querySelector('input[type="radio"]');
+	            radio.checked = true;
+
+	            // Remove active class from all options
+	            document.querySelectorAll('.priority-option').forEach(opt => {
+	                opt.classList.remove('bg-base-300');
+	            });
+
+	            // Add active class to selected option
+	            this.classList.add('bg-base-300');
+	        });
+
+	        // Set initial active state based on checked status
+	        const radio = option.querySelector('input[type="radio"]');
+	        if (radio.checked) {
+	            option.classList.add('bg-base-300');
+	        }
+	    });
+
+	    // Toggle recurring options visibility
+	    const recurringCheckbox = document.querySelector('#is_recurring');
+	    const recurringOptions = document.querySelector('#recurring-options');
+
+	    recurringCheckbox.addEventListener('change', function() {
+	        if (this.checked) {
+	            recurringOptions.classList.remove('hidden');
+	        } else {
+	            recurringOptions.classList.add('hidden');
+	        }
+	    });
+	});
+
+	// Task templates
+	function applyTemplate(templateName) {
+	    const titleInput = document.querySelector('#title');
+	    const descriptionInput = document.querySelector('#description');
+	    const priorityInputs = document.querySelectorAll('input[name="priority"]');
+	    const statusSelect = document.querySelector('#status');
+	    const dueDateInput = document.querySelector('#due_date_picker');
+
+	    switch(templateName) {
+	        case 'meeting':
+	            titleInput.value = 'Meeting: ';
+	            descriptionInput.value = 'Agenda:\n1. \n2. \n3. \n\nAttendees:\n- ';
+	            // Set medium priority
+	            priorityInputs[1].checked = true;
+	            document.querySelectorAll('.priority-option')[1].click();
+	            statusSelect.value = 'pending';
+
+	            // Set due date to next hour
+	            const meetingDate = new Date();
+	            meetingDate.setHours(meetingDate.getHours() + 1);
+	            meetingDate.setMinutes(0);
+	            dueDateInput._flatpickr.setDate(meetingDate);
+	            break;
+
+	        case 'deadline':
+	            titleInput.value = 'Deadline: ';
+	            priorityInputs[2].checked = true;  // High priority
+	            document.querySelectorAll('.priority-option')[2].click();
+	            statusSelect.value = 'pending';
+
+	            // Set due date to tomorrow at 5pm
+	            const deadlineDate = new Date();
+	            deadlineDate.setDate(deadlineDate.getDate() + 1);
+	            deadlineDate.setHours(17, 0, 0, 0);
+	            dueDateInput._flatpickr.setDate(deadlineDate);
+	            break;
+
+	        case 'reminder':
+	            titleInput.value = 'Reminder: ';
+	            priorityInputs[0].checked = true;  // Low priority
+	            document.querySelectorAll('.priority-option')[0].click();
+	            statusSelect.value = 'pending';
+	            break;
+	    }
+
+	    // Focus on title for finishing the input
+	    titleInput.focus();
+	    titleInput.selectionStart = titleInput.selectionEnd = titleInput.value.length;
+	}
+
+	// Delete task confirmation
+	function deleteTaskConfirm(taskId) {
+	    document.getElementById('delete_confirm_modal').showModal();
+	}
+
+	// Delete task
+	function deleteTask(taskId) {
+	    fetch(`/task/${taskId}/delete`, {
+	        method: 'POST',
+	        headers: {
+	            'Content-Type': 'application/json',
+	        },
+	    })
+	    .then(response => response.json())
+	    .then(data => {
+	        if (data.success) {
+	            window.location.href = "{{ url_for('index') }}";
+	        }
+	    })
+	    .catch(error => {
+	        console.error('Error:', error);
+	        alert('Failed to delete task');
+	    });
+	}
+</script>
+{% endblock %}

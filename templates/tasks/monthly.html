@@ -1,0 +1,694 @@
+{% extends "base.html" %} {% block title %}TaskFlow - Monthly Tasks{% endblock
+%} {% block content %}
+<div class="grid grid-cols-1 gap-6">
+	<!-- Header Section -->
+	<div
+		class="card w-full bg-gradient-to-r from-primary to-accent text-primary-content shadow-xl">
+		<div class="card-body">
+			<div
+				class="flex flex-col md:flex-row justify-between items-start md:items-center">
+				<div>
+					<h2 class="card-title text-3xl">{{ month_name }} {{ year }}</h2>
+					<p class="opacity-90">Monthly Task Overview</p>
+				</div>
+				<div class="mt-4 md:mt-0 flex gap-2">
+					<a href="?month=prev" class="btn btn-sm btn-circle">
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							class="h-5 w-5"
+							fill="none"
+							viewBox="0 0 24 24"
+							stroke="currentColor">
+							<path
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								stroke-width="2"
+								d="M15 19l-7-7 7-7" />
+						</svg>
+					</a>
+					<button class="btn btn-sm" onclick="setCurrentMonth()">Today</button>
+					<a href="?month=next" class="btn btn-sm btn-circle">
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							class="h-5 w-5"
+							fill="none"
+							viewBox="0 0 24 24"
+							stroke="currentColor">
+							<path
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								stroke-width="2"
+								d="M9 5l7 7-7 7" />
+						</svg>
+					</a>
+					<a
+						href="{{ url_for('new_task') }}"
+						class="btn btn-sm btn-primary ml-2"
+						>New Task</a
+					>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<!-- View Selector -->
+	<div class="flex justify-center mb-4 tabs tabs-boxed">
+		<a href="{{ url_for('daily_tasks') }}" class="tab">Daily</a>
+		<a href="{{ url_for('weekly_tasks') }}" class="tab">Weekly</a>
+		<a href="{{ url_for('monthly_tasks') }}" class="tab tab-active">Monthly</a>
+	</div>
+
+	<!-- Filters and Controls -->
+	<div class="card w-full bg-base-100 shadow-lg">
+		<div class="card-body">
+			<div class="flex flex-col md:flex-row justify-between gap-4">
+				<div class="form-control w-full md:w-auto">
+					<div class="input-group">
+						<input
+							type="text"
+							id="taskSearch"
+							placeholder="Search tasks..."
+							class="input input-bordered" />
+						<button class="btn btn-square">
+							<svg
+								xmlns="http://www.w3.org/2000/svg"
+								class="h-6 w-6"
+								fill="none"
+								viewBox="0 0 24 24"
+								stroke="currentColor">
+								<path
+									stroke-linecap="round"
+									stroke-linejoin="round"
+									stroke-width="2"
+									d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+							</svg>
+						</button>
+					</div>
+				</div>
+				<div class="flex flex-wrap gap-2">
+					<select class="select select-bordered" id="priorityFilter">
+						<option value="">All Priorities</option>
+						<option value="low">Low</option>
+						<option value="medium">Medium</option>
+						<option value="high">High</option>
+						<option value="urgent">Urgent</option>
+					</select>
+
+					<select class="select select-bordered" id="statusFilter">
+						<option value="">All Statuses</option>
+						<option value="pending">Pending</option>
+						<option value="in_progress">In Progress</option>
+						<option value="completed">Completed</option>
+					</select>
+
+					<select class="select select-bordered" id="categoryFilter">
+						<option value="">All Categories</option>
+						{% for category in categories %}
+						<option value="{{ category.id }}">{{ category.name }}</option>
+						{% endfor %}
+					</select>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<!-- Monthly Calendar View -->
+	<div class="card w-full bg-base-100 shadow-xl overflow-x-auto">
+		<div class="card-body p-2 md:p-6">
+			<!-- Day of week headers -->
+			<div class="grid grid-cols-7 gap-1 text-center font-medium mb-2">
+				<div class="p-2">Sunday</div>
+				<div class="p-2">Monday</div>
+				<div class="p-2">Tuesday</div>
+				<div class="p-2">Wednesday</div>
+				<div class="p-2">Thursday</div>
+				<div class="p-2">Friday</div>
+				<div class="p-2">Saturday</div>
+			</div>
+
+			<!-- Calendar grid -->
+			<div class="grid grid-cols-7 gap-1">
+				{% for day_data in calendar_days %}
+				<div
+					class="day-cell min-h-[120px] h-full border border-base-300 rounded-lg {% if day_data.day == 5 and month_name == 'March' and year == 2025 %}bg-primary bg-opacity-10{% endif %}"
+					{%
+					if
+					day_data.day
+					%}id="day-{{ year }}-{{ month_name|lower }}-{{ day_data.day }}"
+					{%
+					endif
+					%}>
+					<!-- Day number header -->
+					{% if day_data.day %}
+					<div
+						class="p-1 text-right {% if day_data.day == 5 and month_name == 'March' and year == 2025 %}font-bold text-primary{% endif %}">
+						{{ day_data.day }}
+					</div>
+
+					<!-- Tasks for this day -->
+					<div class="p-1 space-y-1">
+						{% if day_data.tasks %} {% for task in day_data.tasks %}
+						<div
+							class="task-item text-xs p-1 rounded bg-base-200 task-priority-{{ task.priority }} 
+                                                    {% if task.completed %}completed-task{% endif %}"
+							data-priority="{{ task.priority }}"
+							data-status="{{ task.status }}"
+							data-category="{{ task.category_id or 0 }}"
+							data-title="{{ task.title|lower }}">
+							<div class="flex items-center gap-1">
+								<input
+									type="checkbox"
+									class="checkbox checkbox-xs"
+									{%
+									if
+									task.completed
+									%}checked{%
+									endif
+									%}
+									data-task-id="{{ task.id }}"
+									onchange="toggleTaskStatus(this)" />
+								<div class="truncate flex-grow">{{ task.title }}</div>
+							</div>
+							<div class="flex justify-between items-center mt-1">
+								{% if task.due_date %}
+								<span class="text-2xs opacity-70"
+									>{{ task.due_date.strftime('%H:%M') }}</span
+								>
+								{% else %}
+								<span></span>
+								{% endif %}
+
+								<div class="dropdown dropdown-left dropdown-hover">
+									<div
+										tabindex="0"
+										role="button"
+										class="btn btn-xs btn-ghost btn-circle">
+										<svg
+											xmlns="http://www.w3.org/2000/svg"
+											fill="none"
+											viewBox="0 0 24 24"
+											stroke="currentColor"
+											class="w-3 h-3">
+											<path
+												stroke-linecap="round"
+												stroke-linejoin="round"
+												stroke-width="2"
+												d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z" />
+										</svg>
+									</div>
+									<ul
+										tabindex="0"
+										class="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-36">
+										<li>
+											<a href="{{ url_for('edit_task', id=task.id) }}">Edit</a>
+										</li>
+										<li>
+											<a
+												href="#"
+												onclick="event.preventDefault(); deleteTask({{ task.id }})"
+												>Delete</a
+											>
+										</li>
+									</ul>
+								</div>
+							</div>
+						</div>
+						{% endfor %} {% if day_data.tasks|length > 3 %}
+						<div
+							class="text-xs text-center opacity-70 py-1 hover:bg-base-200 rounded cursor-pointer"
+							onclick="showDayDetails('{{ year }}-{{ '%02d' % loop.index }}-{{ '%02d' % day_data.day }}')">
+							+ {{ day_data.tasks|length - 3 }} more
+						</div>
+						{% endif %} {% endif %}
+
+						<!-- Add task for this day button (small plus icon) -->
+						<a
+							href="{{ url_for('new_task') }}?date={{ year }}-{{ '%02d' % loop.index0 }}-{{ '%02d' % day_data.day if day_data.day else '01' }}"
+							class="btn btn-ghost btn-xs btn-circle mx-auto block">
+							<svg
+								xmlns="http://www.w3.org/2000/svg"
+								class="h-3 w-3"
+								fill="none"
+								viewBox="0 0 24 24"
+								stroke="currentColor">
+								<path
+									stroke-linecap="round"
+									stroke-linejoin="round"
+									stroke-width="2"
+									d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+							</svg>
+						</a>
+					</div>
+					{% endif %}
+				</div>
+				{% endfor %}
+			</div>
+		</div>
+	</div>
+
+	<!-- Monthly Statistics -->
+	<div class="card w-full bg-base-100 shadow-xl">
+		<div class="card-body">
+			<h2 class="card-title">Monthly Overview</h2>
+			<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
+				<!-- Task Count Card -->
+				<div class="stat bg-base-200 rounded-box">
+					<div class="stat-figure text-primary">
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							class="h-6 w-6"
+							fill="none"
+							viewBox="0 0 24 24"
+							stroke="currentColor">
+							<path
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								stroke-width="2"
+								d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+						</svg>
+					</div>
+					<div class="stat-title">Total Tasks</div>
+					<div class="stat-value text-primary">
+						{% set total_tasks = 0 %} {% for day_data in calendar_days if
+						day_data.tasks %} {% set total_tasks = total_tasks +
+						day_data.tasks|length %} {% endfor %} {{ total_tasks }}
+					</div>
+					<div class="stat-desc">For {{ month_name }}</div>
+				</div>
+
+				<!-- Completion Rate Card -->
+				<div class="stat bg-base-200 rounded-box">
+					<div class="stat-figure text-success">
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							class="h-6 w-6"
+							fill="none"
+							viewBox="0 0 24 24"
+							stroke="currentColor">
+							<path
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								stroke-width="2"
+								d="M5 13l4 4L19 7" />
+						</svg>
+					</div>
+					<div class="stat-title">Completion Rate</div>
+					<div class="stat-value text-success">
+						{% set completed_tasks = 0 %} {% set total_tasks = 0 %} {% for
+						day_data in calendar_days if day_data.tasks %} {% for task in
+						day_data.tasks %} {% set total_tasks = total_tasks + 1 %} {% if
+						task.completed %} {% set completed_tasks = completed_tasks + 1 %} {%
+						endif %} {% endfor %} {% endfor %} {{ ((completed_tasks /
+						total_tasks) * 100)|round|int if total_tasks > 0 else 0 }}%
+					</div>
+					<div class="stat-desc">
+						{{ completed_tasks }} of {{ total_tasks }} tasks
+					</div>
+				</div>
+
+				<!-- Busiest Day Card -->
+				<div class="stat bg-base-200 rounded-box">
+					<div class="stat-figure text-warning">
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							class="h-6 w-6"
+							fill="none"
+							viewBox="0 0 24 24"
+							stroke="currentColor">
+							<path
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								stroke-width="2"
+								d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+						</svg>
+					</div>
+					<div class="stat-title">Busiest Day</div>
+					<div class="stat-value text-warning">
+						{% set busiest_day = 0 %} {% set busiest_count = 0 %} {% for
+						day_data in calendar_days %} {% if day_data.day and
+						day_data.tasks|length > busiest_count %} {% set busiest_day =
+						day_data.day %} {% set busiest_count = day_data.tasks|length %} {%
+						endif %} {% endfor %} {{ busiest_day if busiest_day > 0 else '-' }}
+					</div>
+					<div class="stat-desc">{{ busiest_count }} tasks</div>
+				</div>
+
+				<!-- Priority Distribution Card -->
+				<div class="stat bg-base-200 rounded-box">
+					<div class="stat-figure text-error">
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							class="h-6 w-6"
+							fill="none"
+							viewBox="0 0 24 24"
+							stroke="currentColor">
+							<path
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								stroke-width="2"
+								d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+						</svg>
+					</div>
+					<div class="stat-title">High Priority</div>
+					<div class="stat-value text-error">
+						{% set high_priority = 0 %} {% set urgent_priority = 0 %} {% for
+						day_data in calendar_days if day_data.tasks %} {% for task in
+						day_data.tasks %} {% if task.priority == 'high' %} {% set
+						high_priority = high_priority + 1 %} {% elif task.priority ==
+						'urgent' %} {% set urgent_priority = urgent_priority + 1 %} {% endif
+						%} {% endfor %} {% endfor %} {{ high_priority + urgent_priority }}
+					</div>
+					<div class="stat-desc">
+						{{ urgent_priority }} urgent, {{ high_priority }} high
+					</div>
+				</div>
+			</div>
+
+			<!-- Distribution Charts -->
+			<div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+				<!-- Tasks by Priority Chart -->
+				<div>
+					<h3 class="font-medium mb-2">Tasks by Priority</h3>
+					<div class="w-full">
+						{% set priorities = {'low': 0, 'medium': 0, 'high': 0, 'urgent': 0}
+						%} {% for day_data in calendar_days if day_data.tasks %} {% for task
+						in day_data.tasks %} {% if task.priority in priorities %} {% set _ =
+						priorities.update({task.priority: priorities[task.priority] + 1}) %}
+						{% endif %} {% endfor %} {% endfor %} {% set total =
+						priorities.values()|sum %}
+
+						<div class="flex items-center mb-2">
+							<span class="w-16 text-sm">Low</span>
+							<div class="flex-grow h-3 bg-base-300 rounded-full">
+								{% set low_percent = (priorities['low'] / total * 100) if total
+								> 0 else 0 %}
+								<div
+									class="h-3 bg-success rounded-full"
+									style="width: {{ low_percent }}%"></div>
+							</div>
+							<span class="w-10 text-right text-sm"
+								>{{ priorities['low'] }}</span
+							>
+						</div>
+
+						<div class="flex items-center mb-2">
+							<span class="w-16 text-sm">Medium</span>
+							<div class="flex-grow h-3 bg-base-300 rounded-full">
+								{% set med_percent = (priorities['medium'] / total * 100) if
+								total > 0 else 0 %}
+								<div
+									class="h-3 bg-warning rounded-full"
+									style="width: {{ med_percent }}%"></div>
+							</div>
+							<span class="w-10 text-right text-sm"
+								>{{ priorities['medium'] }}</span
+							>
+						</div>
+
+						<div class="flex items-center mb-2">
+							<span class="w-16 text-sm">High</span>
+							<div class="flex-grow h-3 bg-base-300 rounded-full">
+								{% set high_percent = (priorities['high'] / total * 100) if
+								total > 0 else 0 %}
+								<div
+									class="h-3 bg-error rounded-full"
+									style="width: {{ high_percent }}%"></div>
+							</div>
+							<span class="w-10 text-right text-sm"
+								>{{ priorities['high'] }}</span
+							>
+						</div>
+
+						<div class="flex items-center">
+							<span class="w-16 text-sm">Urgent</span>
+							<div class="flex-grow h-3 bg-base-300 rounded-full">
+								{% set urgent_percent = (priorities['urgent'] / total * 100) if
+								total > 0 else 0 %}
+								<div
+									class="h-3 bg-error opacity-80 rounded-full"
+									style="width: {{ urgent_percent }}%"></div>
+							</div>
+							<span class="w-10 text-right text-sm"
+								>{{ priorities['urgent'] }}</span
+							>
+						</div>
+					</div>
+				</div>
+
+				<!-- Tasks by Status Chart -->
+				<div>
+					<h3 class="font-medium mb-2">Tasks by Status</h3>
+					<div class="w-full">
+						{% set statuses = {'pending': 0, 'in_progress': 0, 'completed': 0}
+						%} {% for day_data in calendar_days if day_data.tasks %} {% for task
+						in day_data.tasks %} {% if task.status in statuses %} {% set _ =
+						statuses.update({task.status: statuses[task.status] + 1}) %} {%
+						endif %} {% endfor %} {% endfor %} {% set total =
+						statuses.values()|sum %}
+
+						<div class="flex items-center mb-2">
+							<span class="w-20 text-sm">Pending</span>
+							<div class="flex-grow h-3 bg-base-300 rounded-full">
+								{% set pending_percent = (statuses['pending'] / total * 100) if
+								total > 0 else 0 %}
+								<div
+									class="h-3 bg-neutral rounded-full"
+									style="width: {{ pending_percent }}%"></div>
+							</div>
+							<span class="w-10 text-right text-sm"
+								>{{ statuses['pending'] }}</span
+							>
+						</div>
+
+						<div class="flex items-center mb-2">
+							<span class="w-20 text-sm">In Progress</span>
+							<div class="flex-grow h-3 bg-base-300 rounded-full">
+								{% set progress_percent = (statuses['in_progress'] / total *
+								100) if total > 0 else 0 %}
+								<div
+									class="h-3 bg-primary rounded-full"
+									style="width: {{ progress_percent }}%"></div>
+							</div>
+							<span class="w-10 text-right text-sm"
+								>{{ statuses['in_progress'] }}</span
+							>
+						</div>
+
+						<div class="flex items-center">
+							<span class="w-20 text-sm">Completed</span>
+							<div class="flex-grow h-3 bg-base-300 rounded-full">
+								{% set completed_percent = (statuses['completed'] / total * 100)
+								if total > 0 else 0 %}
+								<div
+									class="h-3 bg-success rounded-full"
+									style="width: {{ completed_percent }}%"></div>
+							</div>
+							<span class="w-10 text-right text-sm"
+								>{{ statuses['completed'] }}</span
+							>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<!-- Day Detail Modal -->
+	<dialog id="day_detail_modal" class="modal">
+		<div class="modal-box">
+			<h3 class="font-bold text-lg" id="modal_date_title">Tasks for Date</h3>
+			<div class="py-4 space-y-3" id="modal_tasks_container">
+				<!-- Tasks will be inserted here by JavaScript -->
+			</div>
+			<div class="modal-action">
+				<form method="dialog">
+					<button class="btn">Close</button>
+				</form>
+			</div>
+		</div>
+	</dialog>
+
+	<!-- Add Task Button (Floating) -->
+	<div class="fixed bottom-10 right-10">
+		<a
+			href="{{ url_for('new_task') }}"
+			class="btn btn-primary btn-circle btn-lg shadow-2xl">
+			<svg
+				xmlns="http://www.w3.org/2000/svg"
+				class="h-8 w-8"
+				fill="none"
+				viewBox="0 0 24 24"
+				stroke="currentColor">
+				<path
+					stroke-linecap="round"
+					stroke-linejoin="round"
+					stroke-width="2"
+					d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+			</svg>
+		</a>
+	</div>
+</div>
+{% endblock %} {% block scripts %}
+<script>
+	// Toggle task completion status
+	function toggleTaskStatus(checkbox) {
+		const taskId = checkbox.dataset.taskId;
+
+		fetch(`/task/${taskId}/toggle`, {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+			},
+		})
+			.then((response) => response.json())
+			.then((data) => {
+				if (data.success) {
+					const taskElement = checkbox.closest(".task-item");
+					if (data.completed) {
+						taskElement.classList.add("completed-task");
+					} else {
+						taskElement.classList.remove("completed-task");
+					}
+				}
+			})
+			.catch((error) => {
+				console.error("Error:", error);
+				alert("Failed to update task status");
+			});
+	}
+
+	// Delete task
+	function deleteTask(taskId) {
+		if (confirm("Are you sure you want to delete this task?")) {
+			fetch(`/task/${taskId}/delete`, {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+				},
+			})
+				.then((response) => response.json())
+				.then((data) => {
+					if (data.success) {
+						// Remove the task element from the DOM
+						document
+							.querySelector(`[data-task-id="${taskId}"]`)
+							.closest(".task-item")
+							.remove();
+					}
+				})
+				.catch((error) => {
+					console.error("Error:", error);
+					alert("Failed to delete task");
+				});
+		}
+	}
+
+	// Set current month
+	function setCurrentMonth() {
+		window.location.href = "{{ url_for('monthly_tasks') }}";
+	}
+
+	// Show all tasks for a specific day in a modal
+	function showDayDetails(date) {
+		const modal = document.getElementById("day_detail_modal");
+		const modalTitle = document.getElementById("modal_date_title");
+		const modalTasks = document.getElementById("modal_tasks_container");
+
+		// Format date for display
+		const dateObj = new Date(date);
+		const formattedDate = dateObj.toLocaleDateString("en-US", {
+			weekday: "long",
+			year: "numeric",
+			month: "long",
+			day: "numeric",
+		});
+
+		modalTitle.textContent = `Tasks for ${formattedDate}`;
+		modalTasks.innerHTML = ""; // Clear existing tasks
+
+		// Find all tasks for this day and clone them into the modal
+		const dayElement = document.getElementById(`day-${date}`);
+		if (dayElement) {
+			const tasks = dayElement.querySelectorAll(".task-item");
+
+			if (tasks.length === 0) {
+				modalTasks.innerHTML =
+					'<div class="alert">No tasks scheduled for this day.</div>';
+			} else {
+				tasks.forEach((task) => {
+					// Create a more detailed version of the task for the modal
+					const taskClone = task.cloneNode(true);
+					taskClone.classList.remove("text-xs");
+					taskClone.classList.add("p-3");
+
+					// Ensure the onclick handlers still work
+					const checkbox = taskClone.querySelector('input[type="checkbox"]');
+					if (checkbox) {
+						checkbox.setAttribute("onchange", "toggleTaskStatus(this)");
+					}
+
+					modalTasks.appendChild(taskClone);
+				});
+			}
+		} else {
+			modalTasks.innerHTML =
+				'<div class="alert">No tasks found for this day.</div>';
+		}
+
+		modal.showModal();
+	}
+
+	// Task filtering
+	document.addEventListener("DOMContentLoaded", function () {
+		const taskSearch = document.getElementById("taskSearch");
+		const priorityFilter = document.getElementById("priorityFilter");
+		const statusFilter = document.getElementById("statusFilter");
+		const categoryFilter = document.getElementById("categoryFilter");
+
+		function filterTasks() {
+			const searchValue = taskSearch.value.toLowerCase();
+			const priorityValue = priorityFilter.value;
+			const statusValue = statusFilter.value;
+			const categoryValue = categoryFilter.value;
+
+			document.querySelectorAll(".task-item").forEach((task) => {
+				const taskTitle = task.dataset.title || "";
+				const taskPriority = task.dataset.priority;
+				const taskStatus = task.dataset.status;
+				const taskCategory = task.dataset.category;
+
+				const matchesSearch =
+					searchValue === "" || taskTitle.includes(searchValue);
+				const matchesPriority =
+					priorityValue === "" || taskPriority === priorityValue;
+				const matchesStatus = statusValue === "" || taskStatus === statusValue;
+				const matchesCategory =
+					categoryValue === "" || taskCategory === categoryValue;
+
+				if (
+					matchesSearch &&
+					matchesPriority &&
+					matchesStatus &&
+					matchesCategory
+				) {
+					task.style.display = "";
+				} else {
+					task.style.display = "none";
+				}
+			});
+		}
+
+		// Add event listeners
+		if (taskSearch) taskSearch.addEventListener("input", filterTasks);
+		if (priorityFilter) priorityFilter.addEventListener("change", filterTasks);
+		if (statusFilter) statusFilter.addEventListener("change", filterTasks);
+		if (categoryFilter) categoryFilter.addEventListener("change", filterTasks);
+
+		// Highlight today's date - March 5, 2025 based on your provided current date
+		const todayDateCell = document.getElementById("day-2025-march-5");
+		if (todayDateCell) {
+			todayDateCell.classList.add("ring", "ring-primary", "ring-opacity-50");
+		}
+	});
+</script>
+{% endblock %}

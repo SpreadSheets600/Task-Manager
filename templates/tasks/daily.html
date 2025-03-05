@@ -1,0 +1,680 @@
+{% extends "base.html" %} {% block title %}TaskFlow - Daily Tasks {% endblock %}
+{% block content %}
+<div class="grid grid-cols-1 gap-6">
+	<!-- Header Section -->
+	<div
+		class="card w-full bg-gradient-to-r from-primary to-accent text-primary-content shadow-xl">
+		<div class="card-body">
+			<div
+				class="flex flex-col md:flex-row justify-between items-start md:items-center">
+				<div>
+					<h2 class="card-title text-3xl">Daily Tasks</h2>
+					<p class="opacity-90">{{ today.strftime('%A, %B %d, %Y') }}</p>
+				</div>
+				<div class="mt-4 md:mt-0">
+					<a href="{{ url_for('new_task') }}" class="btn btn-sm">New Task</a>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<!-- View Selector -->
+	<div class="flex justify-center mb-4 tabs tabs-boxed">
+		<a href="{{ url_for('daily_tasks') }}" class="tab tab-active">Daily</a>
+		<a href="{{ url_for('weekly_tasks') }}" class="tab">Weekly</a>
+		<a href="{{ url_for('monthly_tasks') }}" class="tab">Monthly</a>
+	</div>
+
+	<!-- Filters and Controls -->
+	<div class="card w-full bg-base-100 shadow-lg">
+		<div class="card-body">
+			<div class="flex flex-col md:flex-row justify-between gap-4">
+				<div class="form-control w-full md:w-auto">
+					<div class="input-group">
+						<input
+							type="text"
+							id="taskSearch"
+							placeholder="Search tasks..."
+							class="input input-bordered" />
+						<button class="btn btn-square">
+							<svg
+								xmlns="http://www.w3.org/2000/svg"
+								class="h-6 w-6"
+								fill="none"
+								viewBox="0 0 24 24"
+								stroke="currentColor">
+								<path
+									stroke-linecap="round"
+									stroke-linejoin="round"
+									stroke-width="2"
+									d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+							</svg>
+						</button>
+					</div>
+				</div>
+				<div class="flex flex-wrap gap-2">
+					<select class="select select-bordered" id="priorityFilter">
+						<option value="">All Priorities</option>
+						<option value="low">Low</option>
+						<option value="medium">Medium</option>
+						<option value="high">High</option>
+						<option value="urgent">Urgent</option>
+					</select>
+
+					<select class="select select-bordered" id="statusFilter">
+						<option value="">All Statuses</option>
+						<option value="pending">Pending</option>
+						<option value="in_progress">In Progress</option>
+						<option value="completed">Completed</option>
+					</select>
+
+					<select class="select select-bordered" id="categoryFilter">
+						<option value="">All Categories</option>
+						{% for category in categories %}
+						<option value="{{ category.id }}">{{ category.name }}</option>
+						{% endfor %}
+					</select>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<!-- Time-Based Sections -->
+	<div class="grid grid-cols-1 gap-6">
+		<!-- Morning Tasks (before 12:00) -->
+		<div class="card w-full bg-base-100 shadow-xl">
+			<div class="card-body">
+				<h2 class="card-title text-2xl flex items-center">
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						class="h-6 w-6 mr-2 text-yellow-500"
+						fill="none"
+						viewBox="0 0 24 24"
+						stroke="currentColor">
+						<path
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							stroke-width="2"
+							d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+					</svg>
+					Morning
+				</h2>
+				<div class="divider my-1"></div>
+				<div class="space-y-4" id="morning-tasks">
+					{% set morning_tasks_exist = false %} {% for task in tasks %} {% if
+					task.due_date and task.due_date.hour < 12 %} {% set
+					morning_tasks_exist = true %}
+					<div
+						class="task-item card card-compact bg-base-200 shadow-sm hover:shadow-md transition-shadow duration-300 task-priority-{{ task.priority }} {% if task.completed %}completed-task{% endif %}"
+						data-priority="{{ task.priority }}"
+						data-status="{{ task.status }}"
+						data-category="{{ task.category_id or 0 }}">
+						<div class="card-body">
+							<div class="flex justify-between items-start">
+								<div class="flex items-start gap-3">
+									<input
+										type="checkbox"
+										class="checkbox checkbox-primary"
+										{%
+										if
+										task.completed
+										%}checked{%
+										endif
+										%}
+										data-task-id="{{ task.id }}"
+										onchange="toggleTaskStatus(this)" />
+									<div>
+										<h3 class="font-bold">{{ task.title }}</h3>
+										{% if task.description %}
+										<p class="text-sm opacity-70">
+											{{ task.description|truncate(100) }}
+										</p>
+										{% endif %}
+										<div class="mt-2 flex flex-wrap gap-2">
+											{% if task.due_date %}
+											<span class="badge badge-outline">
+												<i class="fas fa-clock mr-1"></i>
+												{{ task.due_date.strftime('%H:%M') }}
+											</span>
+											{% endif %}
+											<span
+												class="badge badge-{{ 'success' if task.priority == 'low' else 'warning' if task.priority == 'medium' else 'error' }} badge-outline">
+												{{ task.priority|title }}
+											</span>
+											{% if task.category %}
+											<span
+												class="badge"
+												style="background-color: {{ task.category.color }};">
+												{{ task.category.name }}
+											</span>
+											{% endif %}
+										</div>
+										{% if task.tags %}
+										<div class="mt-1">
+											{% for tag in task.tags %}
+											<span class="badge badge-ghost badge-sm"
+												>{{ tag.name }}</span
+											>
+											{% endfor %}
+										</div>
+										{% endif %}
+									</div>
+								</div>
+							</div>
+							<div class="card-actions justify-end mt-2">
+								<a
+									href="{{ url_for('edit_task', id=task.id) }}"
+									class="btn btn-xs btn-ghost"
+									>Edit</a
+								>
+								<button
+									class="btn btn-xs btn-error btn-outline"
+									onclick="deleteTask({{ task.id }})">
+									Delete
+								</button>
+							</div>
+						</div>
+					</div>
+					{% endif %} {% endfor %} {% if not morning_tasks_exist %}
+					<div class="alert">
+						<div>
+							<svg
+								xmlns="http://www.w3.org/2000/svg"
+								fill="none"
+								viewBox="0 0 24 24"
+								class="stroke-info flex-shrink-0 w-6 h-6">
+								<path
+									stroke-linecap="round"
+									stroke-linejoin="round"
+									stroke-width="2"
+									d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+							</svg>
+							<span>No morning tasks scheduled</span>
+						</div>
+					</div>
+					{% endif %}
+				</div>
+			</div>
+		</div>
+
+		<!-- Afternoon Tasks (12:00 - 17:59) -->
+		<div class="card w-full bg-base-100 shadow-xl">
+			<div class="card-body">
+				<h2 class="card-title text-2xl flex items-center">
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						class="h-6 w-6 mr-2 text-orange-500"
+						fill="none"
+						viewBox="0 0 24 24"
+						stroke="currentColor">
+						<path
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							stroke-width="2"
+							d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+					</svg>
+					Afternoon
+				</h2>
+				<div class="divider my-1"></div>
+				<div class="space-y-4" id="afternoon-tasks">
+					{% set afternoon_tasks_exist = false %} {% for task in tasks %} {% if
+					task.due_date and task.due_date.hour >= 12 and task.due_date.hour < 18
+					%} {% set afternoon_tasks_exist = true %}
+					<div
+						class="task-item card card-compact bg-base-200 shadow-sm hover:shadow-md transition-shadow duration-300 task-priority-{{ task.priority }} {% if task.completed %}completed-task{% endif %}"
+						data-priority="{{ task.priority }}"
+						data-status="{{ task.status }}"
+						data-category="{{ task.category_id or 0 }}">
+						<div class="card-body">
+							<div class="flex justify-between items-start">
+								<div class="flex items-start gap-3">
+									<input
+										type="checkbox"
+										class="checkbox checkbox-primary"
+										{%
+										if
+										task.completed
+										%}checked{%
+										endif
+										%}
+										data-task-id="{{ task.id }}"
+										onchange="toggleTaskStatus(this)" />
+									<div>
+										<h3 class="font-bold">{{ task.title }}</h3>
+										{% if task.description %}
+										<p class="text-sm opacity-70">
+											{{ task.description|truncate(100) }}
+										</p>
+										{% endif %}
+										<div class="mt-2 flex flex-wrap gap-2">
+											{% if task.due_date %}
+											<span class="badge badge-outline">
+												<i class="fas fa-clock mr-1"></i>
+												{{ task.due_date.strftime('%H:%M') }}
+											</span>
+											{% endif %}
+											<span
+												class="badge badge-{{ 'success' if task.priority == 'low' else 'warning' if task.priority == 'medium' else 'error' }} badge-outline">
+												{{ task.priority|title }}
+											</span>
+											{% if task.category %}
+											<span
+												class="badge"
+												style="background-color: {{ task.category.color }};">
+												{{ task.category.name }}
+											</span>
+											{% endif %}
+										</div>
+									</div>
+								</div>
+							</div>
+							<div class="card-actions justify-end mt-2">
+								<a
+									href="{{ url_for('edit_task', id=task.id) }}"
+									class="btn btn-xs btn-ghost"
+									>Edit</a
+								>
+								<button
+									class="btn btn-xs btn-error btn-outline"
+									onclick="deleteTask({{ task.id }})">
+									Delete
+								</button>
+							</div>
+						</div>
+					</div>
+					{% endif %} {% endfor %} {% if not afternoon_tasks_exist %}
+					<div class="alert">
+						<div>
+							<svg
+								xmlns="http://www.w3.org/2000/svg"
+								fill="none"
+								viewBox="0 0 24 24"
+								class="stroke-info flex-shrink-0 w-6 h-6">
+								<path
+									stroke-linecap="round"
+									stroke-linejoin="round"
+									stroke-width="2"
+									d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+							</svg>
+							<span>No afternoon tasks scheduled</span>
+						</div>
+					</div>
+					{% endif %}
+				</div>
+			</div>
+		</div>
+
+		<!-- Evening Tasks (18:00 onwards) -->
+		<div class="card w-full bg-base-100 shadow-xl">
+			<div class="card-body">
+				<h2 class="card-title text-2xl flex items-center">
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						class="h-6 w-6 mr-2 text-indigo-500"
+						fill="none"
+						viewBox="0 0 24 24"
+						stroke="currentColor">
+						<path
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							stroke-width="2"
+							d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+					</svg>
+					Evening
+				</h2>
+				<div class="divider my-1"></div>
+				<div class="space-y-4" id="evening-tasks">
+					{% set evening_tasks_exist = false %} {% for task in tasks %} {% if
+					task.due_date and task.due_date.hour >= 18 %} {% set
+					evening_tasks_exist = true %}
+					<div
+						class="task-item card card-compact bg-base-200 shadow-sm hover:shadow-md transition-shadow duration-300 task-priority-{{ task.priority }} {% if task.completed %}completed-task{% endif %}"
+						data-priority="{{ task.priority }}"
+						data-status="{{ task.status }}"
+						data-category="{{ task.category_id or 0 }}">
+						<div class="card-body">
+							<div class="flex justify-between items-start">
+								<div class="flex items-start gap-3">
+									<input
+										type="checkbox"
+										class="checkbox checkbox-primary"
+										{%
+										if
+										task.completed
+										%}checked{%
+										endif
+										%}
+										data-task-id="{{ task.id }}"
+										onchange="toggleTaskStatus(this)" />
+									<div>
+										<h3 class="font-bold">{{ task.title }}</h3>
+										{% if task.description %}
+										<p class="text-sm opacity-70">
+											{{ task.description|truncate(100) }}
+										</p>
+										{% endif %}
+										<div class="mt-2 flex flex-wrap gap-2">
+											{% if task.due_date %}
+											<span class="badge badge-outline">
+												<i class="fas fa-clock mr-1"></i>
+												{{ task.due_date.strftime('%H:%M') }}
+											</span>
+											{% endif %}
+											<span
+												class="badge badge-{{ 'success' if task.priority == 'low' else 'warning' if task.priority == 'medium' else 'error' }} badge-outline">
+												{{ task.priority|title }}
+											</span>
+										</div>
+									</div>
+								</div>
+							</div>
+							<div class="card-actions justify-end mt-2">
+								<a
+									href="{{ url_for('edit_task', id=task.id) }}"
+									class="btn btn-xs btn-ghost"
+									>Edit</a
+								>
+								<button
+									class="btn btn-xs btn-error btn-outline"
+									onclick="deleteTask({{ task.id }})">
+									Delete
+								</button>
+							</div>
+						</div>
+					</div>
+					{% endif %} {% endfor %} {% if not evening_tasks_exist %}
+					<div class="alert">
+						<div>
+							<svg
+								xmlns="http://www.w3.org/2000/svg"
+								fill="none"
+								viewBox="0 0 24 24"
+								class="stroke-info flex-shrink-0 w-6 h-6">
+								<path
+									stroke-linecap="round"
+									stroke-linejoin="round"
+									stroke-width="2"
+									d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+							</svg>
+							<span>No evening tasks scheduled</span>
+						</div>
+					</div>
+					{% endif %}
+				</div>
+			</div>
+		</div>
+
+		<!-- Anytime Tasks (no specific time) -->
+		<div class="card w-full bg-base-100 shadow-xl">
+			<div class="card-body">
+				<h2 class="card-title text-2xl flex items-center">
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						class="h-6 w-6 mr-2"
+						fill="none"
+						viewBox="0 0 24 24"
+						stroke="currentColor">
+						<path
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							stroke-width="2"
+							d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+					</svg>
+					Anytime Today
+				</h2>
+				<div class="divider my-1"></div>
+				<div class="space-y-4" id="anytime-tasks">
+					{% set anytime_tasks_exist = false %} {% for task in tasks %} {% if
+					not task.due_date or not task.due_date.hour %} {% set
+					anytime_tasks_exist = true %}
+					<div
+						class="task-item card card-compact bg-base-200 shadow-sm hover:shadow-md transition-shadow duration-300 task-priority-{{ task.priority }} {% if task.completed %}completed-task{% endif %}"
+						data-priority="{{ task.priority }}"
+						data-status="{{ task.status }}"
+						data-category="{{ task.category_id or 0 }}">
+						<div class="card-body">
+							<div class="flex justify-between items-start">
+								<div class="flex items-start gap-3">
+									<input
+										type="checkbox"
+										class="checkbox checkbox-primary"
+										{%
+										if
+										task.completed
+										%}checked{%
+										endif
+										%}
+										data-task-id="{{ task.id }}"
+										onchange="toggleTaskStatus(this)" />
+									<div>
+										<h3 class="font-bold">{{ task.title }}</h3>
+										{% if task.description %}
+										<p class="text-sm opacity-70">
+											{{ task.description|truncate(100) }}
+										</p>
+										{% endif %}
+										<div class="mt-2 flex flex-wrap gap-2">
+											<span
+												class="badge badge-{{ 'success' if task.priority == 'low' else 'warning' if task.priority == 'medium' else 'error' }} badge-outline">
+												{{ task.priority|title }}
+											</span>
+											{% if task.category %}
+											<span
+												class="badge"
+												style="background-color: {{ task.category.color }};">
+												{{ task.category.name }}
+											</span>
+											{% endif %}
+										</div>
+										{% if task.tags %}
+										<div class="mt-1">
+											{% for tag in task.tags %}
+											<span class="badge badge-ghost badge-sm"
+												>{{ tag.name }}</span
+											>
+											{% endfor %}
+										</div>
+										{% endif %}
+									</div>
+								</div>
+							</div>
+							<div class="card-actions justify-end mt-2">
+								<a
+									href="{{ url_for('edit_task', id=task.id) }}"
+									class="btn btn-xs btn-ghost"
+									>Edit</a
+								>
+								<button
+									class="btn btn-xs btn-error btn-outline"
+									onclick="deleteTask({{ task.id }})">
+									Delete
+								</button>
+							</div>
+						</div>
+					</div>
+					{% endif %} {% endfor %} {% if not anytime_tasks_exist %}
+					<div class="alert">
+						<div>
+							<svg
+								xmlns="http://www.w3.org/2000/svg"
+								fill="none"
+								viewBox="0 0 24 24"
+								class="stroke-info flex-shrink-0 w-6 h-6">
+								<path
+									stroke-linecap="round"
+									stroke-linejoin="round"
+									stroke-width="2"
+									d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+							</svg>
+							<span>No flexible tasks scheduled</span>
+						</div>
+					</div>
+					{% endif %}
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<!-- Add Task Button (Floating) -->
+	<div class="fixed bottom-10 right-10">
+		<a
+			href="{{ url_for('new_task') }}"
+			class="btn btn-primary btn-circle btn-lg shadow-2xl">
+			<svg
+				xmlns="http://www.w3.org/2000/svg"
+				class="h-8 w-8"
+				fill="none"
+				viewBox="0 0 24 24"
+				stroke="currentColor">
+				<path
+					stroke-linecap="round"
+					stroke-linejoin="round"
+					stroke-width="2"
+					d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+			</svg>
+		</a>
+	</div>
+</div>
+{% endblock %} {% block scripts %}
+<script>
+	// Toggle task completion status
+	function toggleTaskStatus(checkbox) {
+		const taskId = checkbox.dataset.taskId;
+
+		fetch(`/task/${taskId}/toggle`, {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+			},
+		})
+			.then((response) => response.json())
+			.then((data) => {
+				if (data.success) {
+					const taskElement = checkbox.closest(".task-item");
+					if (data.completed) {
+						taskElement.classList.add("completed-task");
+					} else {
+						taskElement.classList.remove("completed-task");
+					}
+				}
+			})
+			.catch((error) => {
+				console.error("Error:", error);
+				alert("Failed to update task status");
+			});
+	}
+
+	// Delete task
+	function deleteTask(taskId) {
+		if (confirm("Are you sure you want to delete this task?")) {
+			fetch(`/task/${taskId}/delete`, {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+				},
+			})
+				.then((response) => response.json())
+				.then((data) => {
+					if (data.success) {
+						// Remove the task element from the DOM
+						document
+							.querySelector(`[data-task-id="${taskId}"]`)
+							.closest(".task-item")
+							.remove();
+					}
+				})
+				.catch((error) => {
+					console.error("Error:", error);
+					alert("Failed to delete task");
+				});
+		}
+	}
+
+	// Task filtering
+	document.addEventListener("DOMContentLoaded", function () {
+		const taskSearch = document.getElementById("taskSearch");
+		const priorityFilter = document.getElementById("priorityFilter");
+		const statusFilter = document.getElementById("statusFilter");
+		const categoryFilter = document.getElementById("categoryFilter");
+
+		function filterTasks() {
+			const searchValue = taskSearch.value.toLowerCase();
+			const priorityValue = priorityFilter.value;
+			const statusValue = statusFilter.value;
+			const categoryValue = categoryFilter.value;
+
+			document.querySelectorAll(".task-item").forEach((task) => {
+				const taskTitle = task.querySelector("h3").textContent.toLowerCase();
+				const taskDescription = task.querySelector("p")
+					? task.querySelector("p").textContent.toLowerCase()
+					: "";
+				const taskPriority = task.dataset.priority;
+				const taskStatus = task.dataset.status;
+				const taskCategory = task.dataset.category;
+
+				const matchesSearch =
+					searchValue === "" ||
+					taskTitle.includes(searchValue) ||
+					taskDescription.includes(searchValue);
+
+				const matchesPriority =
+					priorityValue === "" || taskPriority === priorityValue;
+				const matchesStatus = statusValue === "" || taskStatus === statusValue;
+				const matchesCategory =
+					categoryValue === "" || taskCategory === categoryValue;
+
+				if (
+					matchesSearch &&
+					matchesPriority &&
+					matchesStatus &&
+					matchesCategory
+				) {
+					task.style.display = "";
+				} else {
+					task.style.display = "none";
+				}
+			});
+
+			// Check if each time section is now empty after filtering
+			[
+				"morning-tasks",
+				"afternoon-tasks",
+				"evening-tasks",
+				"anytime-tasks",
+			].forEach((sectionId) => {
+				const section = document.getElementById(sectionId);
+				const visibleTasks = section.querySelectorAll(
+					'.task-item:not([style="display: none;"])'
+				);
+
+				if (visibleTasks.length === 0) {
+					// If no visible tasks, add a "no tasks" message if it doesn't exist
+					if (!section.querySelector(".no-tasks-message")) {
+						const alert = document.createElement("div");
+						alert.className = "alert no-tasks-message";
+						alert.innerHTML = `
+                        <div>
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="stroke-info flex-shrink-0 w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            <span>No matching tasks found</span>
+                        </div>
+                    `;
+						section.appendChild(alert);
+					}
+				} else {
+					// Remove any "no tasks" message if there are visible tasks
+					const noTasksMessage = section.querySelector(".no-tasks-message");
+					if (noTasksMessage) {
+						noTasksMessage.remove();
+					}
+				}
+			});
+		}
+
+		// Add event listeners
+		taskSearch.addEventListener("input", filterTasks);
+		priorityFilter.addEventListener("change", filterTasks);
+		statusFilter.addEventListener("change", filterTasks);
+		categoryFilter.addEventListener("change", filterTasks);
+	});
+</script>
+{% endblock %}

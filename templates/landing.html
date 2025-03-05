@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>TaskFlow - Organize Your Day</title>
+		<script src="https://cdn.tailwindcss.com"></script>
+		<link
+			rel="stylesheet"
+			href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+	</head>
+	<body class="bg-gradient-to-br from-indigo-50 to-blue-100 min-h-screen">
+		<header class="bg-white shadow-sm">
+			<div
+				class="container mx-auto px-4 py-6 flex justify-between items-center">
+				<div class="flex items-center space-x-2">
+					<i class="fas fa-check-circle text-indigo-600 text-2xl"></i>
+					<h1 class="text-2xl font-bold text-gray-800">TaskFlow</h1>
+				</div>
+				<nav>
+					<ul class="flex space-x-6">
+						<li>
+							<a
+								href="{{ url_for('login') }}"
+								class="text-gray-600 hover:text-indigo-600 transition"
+								>Login</a
+							>
+						</li>
+						<li>
+							<a
+								href="{{ url_for('register') }}"
+								class="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 transition"
+								>Sign Up</a
+							>
+						</li>
+					</ul>
+				</nav>
+			</div>
+		</header>
+
+		<main class="container mx-auto px-4 py-12">
+			<div class="flex flex-col lg:flex-row items-center justify-between">
+				<div class="lg:w-1/2 mb-10 lg:mb-0">
+					<h2 class="text-4xl lg:text-5xl font-bold text-gray-800 mb-6">
+						Manage your tasks with ease
+					</h2>
+					<p class="text-xl text-gray-600 mb-8">
+						Stay organized, focused, and in control of your day with our
+						intuitive task management system.
+					</p>
+					<div class="space-y-4 mb-8">
+						<div class="flex items-center">
+							<i class="fas fa-check text-green-500 mr-3"></i>
+							<span class="text-lg"
+								>Track daily, upcoming, and overdue tasks</span
+							>
+						</div>
+						<div class="flex items-center">
+							<i class="fas fa-check text-green-500 mr-3"></i>
+							<span class="text-lg">Prioritize your most important work</span>
+						</div>
+						<div class="flex items-center">
+							<i class="fas fa-check text-green-500 mr-3"></i>
+							<span class="text-lg">Never miss a deadline again</span>
+						</div>
+					</div>
+					<a
+						href="{{ url_for('register') }}"
+						class="inline-block bg-indigo-600 text-white px-6 py-3 rounded-md text-lg font-medium hover:bg-indigo-700 transition"
+						>Get Started - It's Free</a
+					>
+				</div>
+				<div class="lg:w-1/2">
+					<img
+						src="https://images.unsplash.com/photo-1484480974693-6ca0a78fb36b?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=600&h=400&q=80"
+						alt="Task Management"
+						class="rounded-lg shadow-xl w-full" />
+				</div>
+			</div>
+
+			<div class="mt-20 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+				<div class="bg-white p-6 rounded-lg shadow-md">
+					<div class="text-indigo-600 mb-4">
+						<i class="fas fa-calendar-check text-3xl"></i>
+					</div>
+					<h3 class="text-xl font-semibold mb-3">Daily Task View</h3>
+					<p class="text-gray-600">
+						Focus on what matters today. See all your tasks organized by
+						priority.
+					</p>
+				</div>
+				<div class="bg-white p-6 rounded-lg shadow-md">
+					<div class="text-indigo-600 mb-4">
+						<i class="fas fa-clock text-3xl"></i>
+					</div>
+					<h3 class="text-xl font-semibold mb-3">Upcoming Tasks</h3>
+					<p class="text-gray-600">
+						Stay ahead of schedule by viewing your upcoming tasks in advance.
+					</p>
+				</div>
+				<div class="bg-white p-6 rounded-lg shadow-md">
+					<div class="text-indigo-600 mb-4">
+						<i class="fas fa-exclamation-circle text-3xl"></i>
+					</div>
+					<h3 class="text-xl font-semibold mb-3">Overdue Alerts</h3>
+					<p class="text-gray-600">
+						Never let tasks slip through the cracks with overdue task
+						notifications.
+					</p>
+				</div>
+			</div>
+		</main>
+
+		<footer class="bg-gray-800 text-white mt-20">
+			<div class="container mx-auto px-4 py-8">
+				<div class="flex flex-col md:flex-row justify-between items-center">
+					<div class="mb-4 md:mb-0">
+						<div class="flex items-center space-x-2">
+							<i class="fas fa-check-circle text-indigo-400 text-xl"></i>
+							<span class="text-xl font-bold">TaskFlow</span>
+						</div>
+					</div>
+					<div class="text-center md:text-right">
+						<p>&copy; 2023 TaskFlow. All rights reserved.</p>
+					</div>
+				</div>
+			</div>
+		</footer>
+	</body>
+</html>
